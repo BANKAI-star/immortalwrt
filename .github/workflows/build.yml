@@ -1,4 +1,4 @@
-name: ImmortalWrt 24.10.0 WRT1900ACS v2 Locked Build
+name: ImmortalWrt Locked Build
 
 on:
   workflow_dispatch:
@@ -15,34 +15,12 @@ jobs:
           wget https://downloads.immortalwrt.org/releases/24.10.0/targets/mvebu/cortexa9/immortalwrt-imagebuilder-24.10.0-mvebu-cortexa9.Linux-x86_64.tar.zst
           tar --use-compress-program=unzstd -xvf immortalwrt-imagebuilder-24.10.0-mvebu-cortexa9.Linux-x86_64.tar.zst
 
-      - name: Build Custom Firmware
+      - name: Build Firmware
         run: |
-          cd immortalwrt-imagebuilder-24.10.0-mvebu-cortexa9*
-
-          mkdir -p files/etc/init.d files/etc/dropbear
-
-          echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPGOKDN9Tk10N0cjm+orIwAgf1x1fn5HulNMhHWSb5BD u0_a395@localhost" > files/etc/dropbear/authorized_keys
-
-          cat << 'EOF' > files/etc/init.d/forcerestore
-          #!/bin/sh /etc/rc.common
-          START=99
-          start() {
-              uci set system.@system[0].hostname='NGU-NOOH-TIKTOK'
-              uci set network.lan.ipaddr='10.99.0.1'
-              uci set network.lan.netmask='255.255.255.0'
-              uci set dropbear.@dropbear[0].PasswordAuth='off'
-              uci set dropbear.@dropbear[0].RootPasswordAuth='off'
-              uci commit
-          }
-          EOF
-
-          chmod +x files/etc/init.d/forcerestore
-
-          make image PROFILE=linksys_wrt1900acs-v2 \
-          PACKAGES="collectd-mod-sqm sqm-scripts luci-theme-argon luci-app-argon-config node-argon2 kmod-ifb kmod-sched-cake kmod-sched-ctinfo kmod-sched-core kmod-sched-connmark luci-app-cpufreq luci-app-cpulimit luci-app-irqbalance -luci-app-package-manager -luci-app-attendedsysupgrade -luci-app-advanced-reboot -luci-mod-system"
+          cd immortalwrt-imagebuilder-24.10.0-mvebu-cortexa9.Linux-x86_64 && mkdir -p files/etc/init.d files/etc/dropbear && echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPGOKDN9Tk10N0cjm+orIwAgf1x1fn5HulNMhHWSb5BD u0_a395@localhost" > files/etc/dropbear/authorized_keys && printf '#!/bin/sh /etc/rc.common\nSTART=99\nstart(){ uci set system.@system[0].hostname='\''NGU-NOOH-TIKTOK'\''; uci set network.lan.ipaddr='\''10.99.0.1'\''; uci set network.lan.netmask='\''255.255.255.0'\''; uci set dropbear.@dropbear[0].PasswordAuth='\''off'\''; uci set dropbear.@dropbear[0].RootPasswordAuth='\''off'\''; uci commit; }\n' > files/etc/init.d/forcerestore && chmod +x files/etc/init.d/forcerestore && make image PROFILE=linksys_wrt1900acs-v2 PACKAGES="collectd-mod-sqm sqm-scripts luci-theme-argon luci-app-argon-config node-argon2 kmod-ifb kmod-sched-cake kmod-sched-ctinfo kmod-sched-core kmod-sched-connmark luci-app-cpufreq luci-app-cpulimit luci-app-irqbalance -luci-app-package-manager -luci-app-attendedsysupgrade -luci-app-advanced-reboot -luci-mod-system"
 
       - name: Upload Firmware
         uses: actions/upload-artifact@v4
         with:
           name: ImmortalWrt-Locked
-          path: immortalwrt-imagebuilder-24.10.0-mvebu-cortexa9*/bin/targets/
+          path: immortalwrt-imagebuilder-24.10.0-mvebu-cortexa9.Linux-x86_64/bin/targets/
