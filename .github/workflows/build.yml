@@ -20,20 +20,26 @@ jobs:
 
       - name: Download ImageBuilder
         run: |
-          wget https://downloads.immortalwrt.org/releases/23.05.1/targets/mvebu/cortexa9/immortalwrt-imagebuilder-23.05.1-mvebu-cortexa9.Linux-x86_64.tar.zst
-          tar --zstd -xf immortalwrt-imagebuilder-23.05.1-mvebu-cortexa9.Linux-x86_64.tar.zst
+          wget https://downloads.immortalwrt.org/snapshots/targets/mvebu/cortexa9/immortalwrt-imagebuilder-mvebu-cortexa9.Linux-x86_64.tar.zst
+          tar --zstd -xf immortalwrt-imagebuilder-mvebu-cortexa9.Linux-x86_64.tar.zst
           mv immortalwrt-imagebuilder-* builder
 
-      - name: Add hostname lock
+      - name: Add custom locks
         run: |
           mkdir -p builder/files/etc/init.d
+          mkdir -p builder/files/usr/libexec/rpcd
+
           printf '#!/bin/sh /etc/rc.common\nSTART=05\nstart(){ uci set system.@system[0].hostname="NGU-NOOH-TIKTOK"; uci commit system; }\n' > builder/files/etc/init.d/lock-hostname
           chmod +x builder/files/etc/init.d/lock-hostname
+
+          printf '#!/bin/sh\nexit 1\n' > builder/files/usr/libexec/rpcd/luci-backup
+          chmod +x builder/files/usr/libexec/rpcd/luci-backup
 
       - name: Build firmware
         run: |
           cd builder
-          make image PROFILE=linksys_wrt1900acs PACKAGES="luci luci-base luci-mod-admin-full luci-theme-argon luci-app-argon-config sqm-scripts collectd-mod-sqm kmod-sched-cake kmod-sched-ctinfo kmod-sched-core kmod-sched-connmark kmod-ifb luci-app-irqbalance luci-app-cpulimit luci-app-cpufreq node-argon2 -luci-mod-system"
+          make image PROFILE=linksys_wrt1900acs \
+          PACKAGES="luci luci-base luci-mod-admin-full luci-theme-argon luci-app-argon-config sqm-scripts collectd-mod-sqm kmod-sched-cake kmod-sched-ctinfo kmod-sched-core kmod-sched-connmark kmod-ifb luci-app-irqbalance luci-app-cpulimit luci-app-cpufreq node-argon2 -luci-mod-system"
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
