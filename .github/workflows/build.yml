@@ -18,7 +18,6 @@ steps:
   - name: Build Firmware
     run: |
       cd immortalwrt-imagebuilder-24.10.0-mvebu-cortexa9.Linux-x86_64
-
       mkdir -p files/etc/config
 
       cat << "EOF" > files/etc/config/system
@@ -28,12 +27,6 @@ steps:
       EOF
 
       cat << "EOF" > files/etc/config/network
-      config interface 'loopback'
-          option device 'lo'
-          option proto 'static'
-          option ipaddr '127.0.0.1'
-          option netmask '255.0.0.0'
-
       config interface 'lan'
           option device 'br-lan'
           option proto 'static'
@@ -41,7 +34,7 @@ steps:
           option netmask '255.255.255.0'
       EOF
 
-      make image PROFILE=linksys_wrt1900acs PACKAGES="luci luci-base luci-mod-admin-full luci-theme-argon luci-app-argon-config luci-app-sqm sqm-scripts collectd-mod-sqm kmod-ifb kmod-sched-cake kmod-sched-core kmod-sched-ctinfo kmod-sched-connmark luci-app-cpufreq luci-app-cpulimit luci-app-irqbalance irqbalance kmod-irqbypass luci-app-statistics collectd collectd-mod-cpu collectd-mod-interface collectd-mod-load collectd-mod-memory collectd-mod-network collectd-mod-rrdtool luci-app-commands nano htop curl wget ca-bundle"
+      make image PROFILE=linksys_wrt1900acs PACKAGES="luci luci-theme-argon luci-app-argon-config luci-app-sqm sqm-scripts kmod-ifb kmod-sched-cake"
 
   - name: Upload Firmware
     uses: actions/upload-artifact@v4
