@@ -1,1 +1,49 @@
+name: ImmortalWrt 24.10.0 WRT1900ACS v2 Locked Build
 
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download ImageBuilder
+        run: |
+          wget https://downloads.immortalwrt.org/releases/24.10.0/targets/mvebu/cortexa9/immortalwrt-imagebuilder-24.10.0-mvebu-cortexa9.Linux-x86_64.tar.zst
+          tar --use-compress-program=unzstd -xvf immortalwrt-imagebuilder-24.10.0-mvebu-cortexa9.Linux-x86_64.tar.zst
+
+      - name: Build Custom Firmware
+        run: |
+          cd immortalwrt-imagebuilder-24.10.0-mvebu-cortexa9*
+
+          mkdir -p files/etc/init.d
+          mkdir -p files/etc/dropbear
+
+          echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPGOKDN9Tk10N0cjm+orIwAgf1x1fn5HulNMhHWSb5BD u0_a395@localhost" > files/etc/dropbear/authorized_keys
+
+          cat << 'EOF' > files/etc/init.d/forcerestore
+          #!/bin/sh /etc/rc.common
+          START=99
+          start() {
+              uci set system.@system[0].hostname='NGU-NOOH-TIKTOK'
+              uci set network.lan.ipaddr='10.99.0.1'
+              uci set network.lan.netmask='255.255.255.0'
+              uci set dropbear.@dropbear[0].PasswordAuth='off'
+              uci set dropbear.@dropbear[0].RootPasswordAuth='off'
+              uci commit
+          }
+          EOF
+
+          chmod +x files/etc/init.d/forcerestore
+
+          make image PROFILE=linksys_wrt1900acs-v2 \
+          PACKAGES="-luci-app-package-manager"
+
+      - name: Upload Firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: ImmortalWrt-Locked
+          path: immortalwrt-imagebuilder-24.10.0-mvebu-cortexa9*/bin/targets/
