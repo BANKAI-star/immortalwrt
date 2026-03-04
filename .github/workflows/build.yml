@@ -1,44 +1,34 @@
-name: ImmortalWrt Build
+name: Build ImmortalWrt
 
 on:
- workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
- build:
-  runs-on: ubuntu-latest
-  steps:
-   - name: Checkout
-     uses: actions/checkout@v4
+  build:
+    runs-on: ubuntu-latest
 
-   - name: Download ImageBuilder
-     run: |
-      wget https://downloads.immortalwrt.org/releases/24.10.0/targets/mvebu/cortexa9/immortalwrt-imagebuilder-24.10.0-mvebu-cortexa9.Linux-x86_64.tar.zst
-      tar -I zstd -xvf immortalwrt-imagebuilder-24.10.0-mvebu-cortexa9.Linux-x86_64.tar.zst
+    steps:
+      - uses: actions/checkout@v4
 
-   - name: Prepare Custom Config
-     run: |
-      cd immortalwrt-imagebuilder-24.10.0-mvebu-cortexa9.Linux-x86_64
+      - name: Install tools
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential clang flex g++ gawk gcc-multilib \
+          gettext git libncurses5-dev libssl-dev python3 rsync unzip zlib1g-dev \
+          file wget
 
-      mkdir -p files/etc/config
+      - name: Download ImageBuilder
+        run: |
+          wget https://downloads.immortalwrt.org/releases/23.05.3/targets/mvebu/cortexa9/immortalwrt-imagebuilder-23.05.3-mvebu-cortexa9.Linux-x86_64.tar.zst
+          tar --zstd -xf immortalwrt-imagebuilder-*.tar.zst
+          mv immortalwrt-imagebuilder-* builder
 
-      echo "config system
-          option hostname 'NGU-NOOH-TIKTOK'
-          option timezone 'UTC'" > files/etc/config/system
+      - name: Build firmware
+        run: |
+          cd builder && mkdir -p files/etc/init.d && printf '#!/bin/sh /etc/rc.common\nSTART=10\nstart(){ uci set system.@system[0].hostname="NGU-NOOH-TIKTOK"; uci commit system; }\n' > files/etc/init.d/force-hostname && chmod +x files/etc/init.d/force-hostname && make image PROFILE=linksys_wrt1900acs PACKAGES="luci luci-base luci-mod-admin-full luci-theme-argon luci-app-argon-config sqm-scripts collectd-mod-sqm kmod-sched-cake kmod-sched-ctinfo kmod-sched-core kmod-sched-connmark kmod-ifb luci-app-irqbalance luci-app-cpulimit luci-app-cpufreq node-argon2 -luci-mod-system"
 
-      echo "config interface 'lan'
-          option device 'br-lan'
-          option proto 'static'
-          option ipaddr '10.99.0.1'
-          option netmask '255.255.255.0'" > files/etc/config/network
-
-   - name: Build Firmware
-     run: |
-      cd immortalwrt-imagebuilder-24.10.0-mvebu-cortexa9.Linux-x86_64
-
-      make image PROFILE=linksys_wrt1900acs PACKAGES="luci luci-theme-argon luci-app-argon-config luci-app-sqm sqm-scripts kmod-ifb kmod-sched-cake"
-
-   - name: Upload Firmware
-     uses: actions/upload-artifact@v4
-     with:
-      name: immortalwrt-wrt1900acs
-      path: immortalwrt-imagebuilder-24.10.0-mvebu-cortexa9.Linux-x86_64/bin/targets/
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: builder/bin/targets/
