@@ -19,25 +19,42 @@ jobs:
         run: |
           cd immortalwrt-imagebuilder-24.10.0-mvebu-cortexa9.Linux-x86_64
 
-          mkdir -p files/etc/config
+          mkdir -p files/etc/uci-defaults
           mkdir -p files/etc/dropbear
 
-          echo "config system" > files/etc/config/system
-          echo "	option hostname 'NGU-NOOH-TIKTOK'" >> files/etc/config/system
-
-          echo "config interface 'lan'" > files/etc/config/network
-          echo "	option device 'br-lan'" >> files/etc/config/network
-          echo "	option proto 'static'" >> files/etc/config/network
-          echo "	option ipaddr '10.99.0.1'" >> files/etc/config/network
-          echo "	option netmask '255.255.255.0'" >> files/etc/config/network
-
+          # SSH key
           echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPGOKDN9Tk10N0cjm+orIwAgf1x1fn5HulNMhHWSb5BD u0_a395@localhost" > files/etc/dropbear/authorized_keys
 
-          echo "config dropbear" > files/etc/config/dropbear
-          echo "	option PasswordAuth 'off'" >> files/etc/config/dropbear
-          echo "	option RootPasswordAuth 'off'" >> files/etc/config/dropbear
+          # Permanent configuration (runs after reset too)
+          echo "uci set system.@system[0].hostname='NGU-NOOH-TIKTOK'" > files/etc/uci-defaults/99-custom
+          echo "uci set network.lan.ipaddr='10.99.0.1'" >> files/etc/uci-defaults/99-custom
+          echo "uci set network.lan.netmask='255.255.255.0'" >> files/etc/uci-defaults/99-custom
+          echo "uci set dropbear.@dropbear[0].PasswordAuth='off'" >> files/etc/uci-defaults/99-custom
+          echo "uci set dropbear.@dropbear[0].RootPasswordAuth='off'" >> files/etc/uci-defaults/99-custom
+          echo "uci commit" >> files/etc/uci-defaults/99-custom
+          echo "exit 0" >> files/etc/uci-defaults/99-custom
 
-          make image PROFILE=linksys_wrt1900acs PACKAGES="collectd-mod-sqm sqm-scripts luci-theme-argon luci-app-argon-config node-argon2 kmod-ifb kmod-sched-cake kmod-sched-ctinfo kmod-sched-core kmod-sched-connmark luci-app-cpufreq luci-app-cpulimit luci-app-irqbalance -luci-app-package-manager -luci-app-attendedsysupgrade -luci-app-advanced-reboot -luci-mod-system"
+          chmod +x files/etc/uci-defaults/99-custom
+
+          make image PROFILE=linksys_wrt1900acs PACKAGES="\
+          collectd-mod-sqm \
+          sqm-scripts \
+          luci-app-sqm \
+          luci-theme-argon \
+          luci-app-argon-config \
+          node-argon2 \
+          kmod-ifb \
+          kmod-sched-cake \
+          kmod-sched-ctinfo \
+          kmod-sched-core \
+          kmod-sched-connmark \
+          luci-app-cpufreq \
+          luci-app-cpulimit \
+          luci-app-irqbalance \
+          -luci-app-package-manager \
+          -luci-app-attendedsysupgrade \
+          -luci-app-advanced-reboot \
+          -luci-mod-system"
 
       - name: Upload Firmware
         uses: actions/upload-artifact@v4
