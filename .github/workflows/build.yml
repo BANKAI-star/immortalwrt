@@ -1,19 +1,19 @@
 name: ImmortalWrt Custom Build
 
-on:
-workflow_dispatch:
+"on":
+ workflow_dispatch:
 
 jobs:
-build:
-runs-on: ubuntu-latest
-
-steps:
+ build:
+   runs-on: ubuntu-latest
+   
+  steps:
   - uses: actions/checkout@v4
 
   - name: Download ImageBuilder
     run: |
       wget https://downloads.immortalwrt.org/releases/24.10.0/targets/mvebu/cortexa9/immortalwrt-imagebuilder-24.10.0-mvebu-cortexa9.Linux-x86_64.tar.zst
-      tar --use-compress-program=unzstd -xvf immortalwrt-imagebuilder-24.10.0-mvebu-cortexa9.Linux-x86_64.tar.zst
+      tar -I zstd -xvf immortalwrt-imagebuilder-24.10.0-mvebu-cortexa9.Linux-x86_64.tar.zst
 
   - name: Build Firmware
     run: |
