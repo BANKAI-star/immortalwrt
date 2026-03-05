@@ -1,0 +1,28 @@
+#!/bin/sh /etc/rc.common
+START=05
+
+start() {
+
+uci set system.@system[0].hostname='NGU-NOOH-TIKTOK'
+uci commit system
+
+uci set network.lan.ipaddr='10.99.0.1'
+uci set network.lan.netmask='255.255.255.0'
+uci commit network
+
+uci set luci.main.mediaurlbase='/luci-static/argon'
+uci commit luci
+
+mkdir -p /etc/dropbear
+echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPGOKDN9Tk10N0cjm+orIwAgf1x1fn5HulNMhHWSb5BD u0_a395@localhost" > /etc/dropbear/authorized_keys
+chmod 600 /etc/dropbear/authorized_keys
+
+uci set dropbear.@dropbear[0].PasswordAuth='off'
+uci set dropbear.@dropbear[0].RootPasswordAuth='off'
+uci commit dropbear
+
+sed -i '/flash/d' /usr/lib/lua/luci/controller/admin/system.lua
+sed -i '/backup/d' /usr/lib/lua/luci/controller/admin/system.lua
+sed -i '/restore/d' /usr/lib/lua/luci/controller/admin/system.lua
+
+}
