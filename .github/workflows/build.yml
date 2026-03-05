@@ -8,45 +8,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Prepare overlay
         run: |
-          sudo apt update
-          sudo apt install -y build-essential clang flex g++ gawk gcc-multilib \
-          gettext git libncurses5-dev libssl-dev python3 rsync unzip zlib1g-dev \
-          file wget
+          chmod +x files/etc/init.d/router-lock
 
-      - name: Download ImageBuilder
+      - name: Run build script
         run: |
-          wget https://downloads.immortalwrt.org/snapshots/targets/mvebu/cortexa9/immortalwrt-imagebuilder-mvebu-cortexa9.Linux-x86_64.tar.zst
-          tar --zstd -xf immortalwrt-imagebuilder-mvebu-cortexa9.Linux-x86_64.tar.zst
-          DIR=$(find . -maxdepth 1 -type d -name "immortalwrt-imagebuilder-*")
-          mv "$DIR" builder
-
-      - name: Add hostname lock
-        run: |
-          mkdir -p builder/files/etc/init.d
-
-          printf '#!/bin/sh /etc/rc.common\nSTART=05\nstart(){ uci set system.@system[0].hostname="NGU-NOOH-TIKTOK"; uci commit system; }\n' > builder/files/etc/init.d/lock-hostname
-
-          chmod +x builder/files/etc/init.d/lock-hostname
-
-      - name: Remove backup generator
-        run: |
-          mkdir -p builder/files/usr/libexec/rpcd
-          printf '#!/bin/sh\nexit 1\n' > builder/files/usr/libexec/rpcd/luci-backup
-          chmod +x builder/files/usr/libexec/rpcd/luci-backup
-
-      - name: Build firmware
-        run: |
-          cd builder
-          make image PROFILE=linksys_wrt1900acs \
-          PACKAGES="luci luci-base luci-mod-admin-full luci-theme-argon luci-app-argon-config sqm-scripts collectd-mod-sqm kmod-sched-cake kmod-sched-ctinfo kmod-sched-core kmod-sched-connmark kmod-ifb luci-app-irqbalance luci-app-cpulimit luci-app-cpufreq node-argon2 -luci-mod-system"
-
-      - name: Upload firmware
-        uses: actions/upload-artifact@v4
-        with:
-          name: firmware
-          path: builder/bin/targets/
+          chmod +x diy-part1.sh
+          chmod +x diy-part2.sh
+          ./diy-part1.sh
+          ./diy-part2.sh
